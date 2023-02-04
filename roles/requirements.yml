@@ -1,0 +1,11 @@
+---
+roles:
+  - linux-system-roles.storage
+  - linux-system-roles.firewall
+  - linux-system-roles.timesync
+  - linux-system-roles.selinux
+  - linux-system-roles.network
+  - linux-system-roles.cockpit
+  - geerlingguy.samba
+  - geerlingguy.nfs
+  - redhat.rhv

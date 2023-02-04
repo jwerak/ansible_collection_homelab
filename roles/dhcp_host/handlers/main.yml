@@ -1,0 +1,8 @@
+---
+- name: Restart dhcp
+  service:
+    name: dnsmasq
+    state: restarted
+  loop:
+    - dnsmasq
+    - odhcpd

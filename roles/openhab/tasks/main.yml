@@ -1,0 +1,34 @@
+---
+- name: Read time zone
+  command: timedatectl show
+  register: timedate_show
+
+- name: Create timezone file for openhab
+  copy:
+    content: "{{ timedate_show.stdout_lines[0].split('=')[1] }}"
+    dest: /etc/timezone
+
+- name: Add openhab systemd service file
+  template:
+    src: openhab.service.j2
+    dest: /etc/systemd/system/openhab.service
+  register: openhab_service_file
+  notify:
+    - restart openhab
+
+- name: Ensure openhab service is started
+  ansible.builtin.systemd:
+    name: openhab
+    state: started
+    enabled: true
+
+- name: Enable openHAB ports
+  firewalld:
+    port: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  loop:
+    - 8883/tcp
+    - 8888/tcp
+...

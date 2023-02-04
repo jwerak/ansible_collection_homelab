@@ -1,0 +1,12 @@
+---
+- name: Create podman socket
+  copy:
+    src: files/podman.socket
+    dest: /etc/systemd/system/podman.socket
+
+- name: Enable podman.socket
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    name: podman.socket
+...

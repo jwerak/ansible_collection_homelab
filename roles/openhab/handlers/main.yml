@@ -1,0 +1,7 @@
+---
+- name: restart openhab
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: openhab
+...

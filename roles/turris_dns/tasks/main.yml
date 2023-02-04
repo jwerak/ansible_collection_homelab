@@ -1,0 +1,5 @@
+---
+- name: Update config file with dns records
+  debug:
+    msg: "Not implemented"
+...

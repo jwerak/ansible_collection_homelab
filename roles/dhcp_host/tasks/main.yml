@@ -1,0 +1,16 @@
+---
+- name: Add host to dhcp config file
+  blockinfile:
+    path: /etc/config/dhcp
+    block: |
+      config host
+              option dns '1'
+              option mac '4C:52:62:A9:AA:{{ item }}'
+              option ip '192.168.0.{{ item }}'
+    marker: "# {mark} ANSIBLE MANAGED BLOCK 192.168.0.{{ item }}"
+    state: absent
+  notify: Restart dhcp
+  loop:
+    - 14
+    - 15
+    - 16

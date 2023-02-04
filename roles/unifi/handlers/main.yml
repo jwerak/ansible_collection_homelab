@@ -1,0 +1,10 @@
+---
+- name: Restart unifi-controller
+  become_user: "{{ unifi_system_username }}"
+  ansible.builtin.systemd:
+    daemon_reload: true
+    state: restarted
+    name: unifi-controller
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: /run/user/{{ unifi_user_info.uid }}

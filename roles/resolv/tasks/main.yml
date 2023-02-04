@@ -1,0 +1,16 @@
+---
+- name: Setup DNS for rhv host
+  ansible.builtin.lineinfile:
+    path: /etc/NetworkManager/NetworkManager.conf
+    insertafter: "^\\[main\\]"
+    regexp: "^dns="
+    line: "dns=none"
+  notify:
+    - Restart Network Manager
+
+- name: Create resolv.conf file
+  ansible.builtin.copy:
+    dest: /etc/resolv.conf
+    content: |
+      search {{ dns_search_domains | join(' ') }}
+      nameserver {{ dns_server_ip }}

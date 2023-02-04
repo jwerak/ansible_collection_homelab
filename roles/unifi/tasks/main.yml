@@ -1,0 +1,87 @@
+---
+- name: Create unifi user
+  ansible.builtin.user:
+    name: "{{ unify_system_username }}"
+  register: unifi_user_info
+
+- name: Enable linger for unifi user
+  ansible.builtin.command:
+    cmd: loginctl enable-linger {{ unify_system_username }}
+    creates: /var/lib/systemd/linger/{{ unify_system_username }}
+
+- name: Read subuid for unifi user
+  ansible.builtin.slurp:
+    src: /etc/subuid
+  register: unifi_subuid_file
+
+- name: Load subuid file to list
+  ansible.builtin.set_fact:
+    unifi_config_uid: "{{ unifi_subuid_file.content | b64decode | regex_search(unify_system_username + ':([0-9]+):' | string, '\\1') | first | int + 999 }}"
+
+- name: Read subgid for unifi user
+  ansible.builtin.slurp:
+    src: /etc/subgid
+  register: unifi_subgid_file
+
+- name: Load subgid file to list
+  ansible.builtin.set_fact:
+    unifi_config_gid: "{{ unifi_subgid_file.content | b64decode | regex_search(unify_system_username + ':([0-9]+):' | string, '\\1') | first | int + 999 }}"
+
+- name: Create config directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    recurse: true
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+  loop:
+    - path: "{{ unifi_user_info.home }}/{{ unifi_systemd_config_dir }}"
+      uid: "{{ unifi_user_info.uid }}"
+      gid: "{{ unifi_user_info.group }}"
+    - path: "{{ unifi_user_info.home }}/{{ unifi_unifi_config_dir }}"
+      uid: "{{ unifi_config_uid }}"
+      gid: "{{ unifi_config_gid }}"
+
+- name: Add unifi-controller systemd service file
+  ansible.builtin.template:
+    src: unifi-controller.service.j2
+    dest: "{{ unifi_user_info.home }}/{{ unifi_systemd_config_dir }}/unifi-controller.service"
+    mode: 0644
+  register: unifi_controller_service_file
+  notify:
+    - Restart unifi-controller
+
+- name: Open ports on Firewall for unifi controller
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop: "{{ unifi_controller_ports }}"
+
+- name: Ensure unifi-controller service is started
+  become_user: "{{ unify_system_username }}"
+  ansible.builtin.systemd:
+    name: unifi-controller
+    state: started
+    enabled: true
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: /run/user/{{ unifi_user_info.uid }}
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Check if unifi controller is listening
+  delegate_to: localhost
+  ansible.builtin.wait_for:
+    host: "{{ unifi_listen_domain }}"
+    port: 8443
+    delay: 5
+    timeout: 10
+    msg: "Timeout waiting for 8443 to respond"
+  retries: 5
+
+- name: Unifi is up
+  ansible.builtin.debug:
+    msg: "Unifi Controller is listening on https://{{ unifi_listen_domain }}:8443"

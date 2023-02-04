@@ -1,0 +1,14 @@
+---
+# Install libvirt
+- name: Install libvirt
+  yum:
+    name:
+      - "@Virtualization Host"
+    state: latest
+
+# Enable libvirt
+- name: enable and start libvirtd
+  service:
+    name: libvirtd
+    state: started
+    enabled: true
