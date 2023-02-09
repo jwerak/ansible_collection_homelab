@@ -1,20 +1,23 @@
 ---
 - name: Read time zone
-  command: timedatectl show
+  ansible.builtin.command: timedatectl show
   register: timedate_show
+  changed_when: false
 
 - name: Create timezone file for openhab
-  copy:
+  ansible.builtin.copy:
     content: "{{ timedate_show.stdout_lines[0].split('=')[1] }}"
     dest: /etc/timezone
+    mode: 0644
 
 - name: Add openhab systemd service file
-  template:
+  ansible.builtin.template:
     src: openhab.service.j2
     dest: /etc/systemd/system/openhab.service
+    mode: 0644
   register: openhab_service_file
   notify:
-    - restart openhab
+    - Restart openhab
 
 - name: Ensure openhab service is started
   ansible.builtin.systemd:
@@ -22,8 +25,14 @@
     state: started
     enabled: true
 
+- name: Get firewalld status
+  ansible.builtin.systemd:
+    name: firewalld
+  register: firewalld_service
+
 - name: Enable openHAB ports
-  firewalld:
+  when: firewalld_service.status.ActiveState == 'active'
+  ansible.builtin.firewalld:
     port: "{{ item }}"
     state: enabled
     permanent: true
@@ -31,4 +40,3 @@
   loop:
     - 8883/tcp
     - 8888/tcp
-...

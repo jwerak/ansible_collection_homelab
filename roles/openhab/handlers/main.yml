@@ -1,7 +1,6 @@
 ---
-- name: restart openhab
-  systemd:
-    daemon_reload: yes
+- name: Restart openhab
+  ansible.builtin.systemd:
+    daemon_reload: true
     state: restarted
     name: openhab
-...
