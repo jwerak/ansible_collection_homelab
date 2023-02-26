@@ -8,13 +8,13 @@
   ansible.builtin.copy:
     content: "{{ timedate_show.stdout_lines[0].split('=')[1] }}"
     dest: /etc/timezone
-    mode: 0644
+    mode: "0644"
 
 - name: Add openhab systemd service file
   ansible.builtin.template:
     src: openhab.service.j2
     dest: /etc/systemd/system/openhab.service
-    mode: 0644
+    mode: "0644"
   register: openhab_service_file
   notify:
     - Restart openhab
@@ -25,18 +25,22 @@
     state: started
     enabled: true
 
-- name: Get firewalld status
-  ansible.builtin.systemd:
-    name: firewalld
-  register: firewalld_service
+- name: Configure firewall rules
+  when: openhab_configure_firewall
+  block:
+    - name: Get firewalld status
+      ansible.builtin.systemd:
+        name: firewalld
+      register: firewalld_service
 
-- name: Enable openHAB ports
-  when: firewalld_service.status.ActiveState == 'active'
-  ansible.builtin.firewalld:
-    port: "{{ item }}"
-    state: enabled
-    permanent: true
-    immediate: true
-  loop:
-    - 8883/tcp
-    - 8888/tcp
+    - name: Enable openHAB ports
+      when: firewalld_service.status.ActiveState == 'active'
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        state: enabled
+        permanent: true
+        immediate: true
+      loop:
+        - 8883/tcp
+        - 8888/tcp
+      tags: firewalld
