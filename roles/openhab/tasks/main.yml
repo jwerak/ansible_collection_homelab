@@ -10,6 +10,26 @@
     dest: /etc/timezone
     mode: "0644"
 
+- name: Setup localtime
+  ansible.builtin.file:
+    state: link
+    src: /usr/share/zoneinfo/{{ openhab_localtime }}
+    dest: /etc/localtime
+
+- name: Ensure openhab folders are present
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0700
+    owner: root
+    group: root
+  loop: "{{ __openhab_dirs }}"
+
+- name: Set devices podman option variable
+  when: openhab_additional_device != ""
+  ansible.builtin.set_fact:
+    __openhab_podman_device_string: "--device=/dev/{{ openhab_additional_device }}"
+
 - name: Add openhab systemd service file
   ansible.builtin.template:
     src: openhab.service.j2

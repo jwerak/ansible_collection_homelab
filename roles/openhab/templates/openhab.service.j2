@@ -12,7 +12,7 @@ After=network-online.target
 Environment=PODMAN_SYSTEMD_UNIT=%n
 Restart=on-failure
 ExecStartPre=/bin/rm -f %t/container-openhab.pid %t/container-openhab.ctr-id
-ExecStart=/usr/bin/podman run --conmon-pidfile %t/container-openhab.pid --cidfile %t/container-openhab.ctr-id --cgroups=no-conmon -d --replace --name openhab --net host --mount type=bind,src=/etc/localtime,dst=/etc/localtime,relabel=shared,ro=true --mount type=bind,src=/etc/timezone,dst=/etc/timezone,relabel=shared,ro=true -v /opt/openhab/conf:/openhab/conf:Z -v /opt/openhab/userdata:/openhab/userdata:Z -v /opt/openhab/addons:/openhab/addons:Z --device=/dev/ttyACM0 -e CRYPTO_POLICY=unlimited -e OPENHAB_HTTP_PORT=8888 -e OPENHAB_HTTPS_PORT=8883 --label io.containers.autoupdate=image docker.io/openhab/openhab:latest
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/container-openhab.pid --cidfile %t/container-openhab.ctr-id --cgroups=no-conmon -d --replace --name openhab --net host --mount type=bind,src=/etc/localtime,dst=/etc/localtime,relabel=shared,ro=true --mount type=bind,src=/etc/timezone,dst=/etc/timezone,relabel=shared,ro=true -v /opt/openhab/conf:/openhab/conf:Z -v /opt/openhab/userdata:/openhab/userdata:Z -v /opt/openhab/addons:/openhab/addons:Z {{ __openhab_podman_device_string }} -e CRYPTO_POLICY=unlimited -e OPENHAB_HTTP_PORT=8888 -e OPENHAB_HTTPS_PORT=8883 --label io.containers.autoupdate=image docker.io/openhab/openhab:latest
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/container-openhab.ctr-id -t 10
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/container-openhab.ctr-id
 PIDFile=%t/container-openhab.pid
