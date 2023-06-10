@@ -1,0 +1,24 @@
+---
+# tasks file for backup
+
+# Ensure Backup user exists
+- name: Create linux user named backup
+  ansible.builtin.user:
+    name: backup
+    comment: Backup user
+    shell: /bin/bash
+    state: present
+    generate_ssh_key: true
+  register: backup_user
+
+- name: Copy backup user ssh keys to remote host
+  ansible.posix.authorized_key:
+    user: "{{ hostvars[item]['backup_remote_user'] }}"
+    state: present
+    key: "{{ backup_user.ssh_public_key }}"
+  remote_user: "{{ hostvars[item]['backup_remote_user'] }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups[backup_clients_groupname] }}"
+# Create script to backup folders from remote to local
+# Create systemd service and timer to do the backup
+# Finally Configure restic to backup all dirs to synology

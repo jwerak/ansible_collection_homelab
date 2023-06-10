@@ -1,0 +1,12 @@
+---
+# defaults file for backup
+
+backup_remote_rsync_hosts: []
+# Example:
+# backup_remote_rsync_hosts:
+#   - name: malina.lan
+#     remote_user: root
+#     remote_dirs:
+#       - /opt/
+
+backup_clients_groupname: "backup_clients"

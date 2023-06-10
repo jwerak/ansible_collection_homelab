@@ -3,3 +3,5 @@ __openhab_dirs:
   - "{{ openhab_conf_dir }}"
   - "{{ openhab_addons_dir }}"
   - "{{ openhab_userdata_dir }}"
+
+__openhab_podman_device_string: ""
