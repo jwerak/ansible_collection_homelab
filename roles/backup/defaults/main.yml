@@ -1,7 +1,6 @@
 ---
 # defaults file for backup
 
-backup_remote_rsync_hosts: []
 # Example:
 # backup_remote_rsync_hosts:
 #   - name: malina.lan
@@ -9,4 +8,10 @@ backup_remote_rsync_hosts: []
 #     remote_dirs:
 #       - /opt/
 
-backup_clients_groupname: "backup_clients"
+backup_server_user: backup
+backup_clients_groupname: backup_clients
+backup_server_groupname: backup_server
+
+backup_base_path: /var/backup
+backup_scripts_path: "{{ backup_base_path }}/scripts"
+backup_rsync_base_path: "{{ backup_base_path }}/rsync"

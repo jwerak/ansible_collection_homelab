@@ -1,24 +1,25 @@
 ---
 # tasks file for backup
+- name: Install rpm packages on ostree based os
+  community.general.rpm_ostree_pkg:
+    name:
+      - rsync
+      - restic
+    state: present
+  register: __backup_install_packages
+
+- name: Reboot linux server
+  ansible.builtin.reboot:
+    reboot_timeout: "{{ backup_reboot_timeout }}"
+  when:
+    - __backup_install_packages is changed
 
 # Ensure Backup user exists
 - name: Create linux user named backup
   ansible.builtin.user:
-    name: backup
+    name: "{{ backup_server_user }}"
     comment: Backup user
     shell: /bin/bash
     state: present
     generate_ssh_key: true
-  register: backup_user
-
-- name: Copy backup user ssh keys to remote host
-  ansible.posix.authorized_key:
-    user: "{{ hostvars[item]['backup_remote_user'] }}"
-    state: present
-    key: "{{ backup_user.ssh_public_key }}"
-  remote_user: "{{ hostvars[item]['backup_remote_user'] }}"
-  delegate_to: "{{ item }}"
-  loop: "{{ groups[backup_clients_groupname] }}"
-# Create script to backup folders from remote to local
-# Create systemd service and timer to do the backup
 # Finally Configure restic to backup all dirs to synology

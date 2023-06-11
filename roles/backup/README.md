@@ -3,6 +3,10 @@ Backup
 
 Simple role to group backup practices for homelab.
 
+Tasks in role:
+- *main.yml* - setup backup server
+- *rsync_target.yml* - Setup server to backup files from to backup server
+
 Requirements
 ------------
 

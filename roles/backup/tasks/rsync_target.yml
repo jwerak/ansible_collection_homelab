@@ -1,0 +1,41 @@
+---
+- name: Set Backup server host
+  ansible.builtin.set_fact:
+    backup_server_name: "{{ groups[backup_server_groupname][0] }}"
+
+- name: Get backup user info
+  ansible.builtin.user:
+    name: "{{ backup_server_user }}"
+    generate_ssh_key: true
+  register: backup_user
+  delegate_to: "{{ backup_server_name }}"
+
+- name: Print user info
+  ansible.builtin.debug:
+    var: backup_user
+
+- name: Copy backup user ssh keys to remote host
+  ansible.posix.authorized_key:
+    user: "{{ backup_remote_user }}"
+    state: present
+    key: "{{ backup_user.ssh_public_key }}"
+
+- name: Create backup script directory
+  ansible.builtin.file:
+    state: directory
+    path: "{{ backup_scripts_path }}"
+    owner: "{{ backup_user.name }}"
+    mode: 0750
+  delegate_to: "{{ backup_server_name }}"
+
+- name: Create rsync backup script
+  ansible.builtin.copy:
+    dest: "{{ backup_scripts_path }}/rsync-{{ ansible_host }}.sh"
+    content: |
+      #!/bin/bash
+      echo hello
+    owner: "{{ backup_user.name }}"
+    mode: 0550
+  delegate_to: "{{ backup_server_name }}"
+# Create script to backup folders from remote to local
+# Create systemd service and timer to do the backup
