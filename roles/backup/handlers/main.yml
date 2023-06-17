@@ -1,2 +1,5 @@
 ---
 # handlers file for backup
+- name: Reboot linux server
+  ansible.builtin.reboot:
+    reboot_timeout: "{{ backup_reboot_timeout }}"

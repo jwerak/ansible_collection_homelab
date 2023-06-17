@@ -1,18 +1,22 @@
 ---
 - name: Set Backup server host
   ansible.builtin.set_fact:
-    backup_server_name: "{{ groups[backup_server_groupname][0] }}"
+    __backup_server_name: "{{ groups[backup_server_groupname][0] }}"
+    __backup_dest: "{{ backup_rsync_base_path }}/{{ ansible_host }}"
 
 - name: Get backup user info
   ansible.builtin.user:
     name: "{{ backup_server_user }}"
     generate_ssh_key: true
   register: backup_user
-  delegate_to: "{{ backup_server_name }}"
+  delegate_to: "{{ __backup_server_name }}"
 
-- name: Print user info
-  ansible.builtin.debug:
-    var: backup_user
+- name: Install rpm packages on ostree based os
+  community.general.rpm_ostree_pkg:
+    name:
+      - rsync
+    state: present
+  notify: Reboot linux server
 
 - name: Copy backup user ssh keys to remote host
   ansible.posix.authorized_key:
@@ -26,16 +30,25 @@
     path: "{{ backup_scripts_path }}"
     owner: "{{ backup_user.name }}"
     mode: 0750
-  delegate_to: "{{ backup_server_name }}"
+  delegate_to: "{{ __backup_server_name }}"
+
+- name: Ensure backup dest directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ __backup_dest }}"
+    owner: "{{ backup_user.name }}"
+    mode: 0770
+  delegate_to: "{{ __backup_server_name }}"
 
 - name: Create rsync backup script
   ansible.builtin.copy:
     dest: "{{ backup_scripts_path }}/rsync-{{ ansible_host }}.sh"
     content: |
       #!/bin/bash
-      echo hello
+      rsync -az -e "ssh -o StrictHostKeyChecking=no" {{ backup_remote_user }}@{{ ansible_host }}:{{ backup_dirs | join(' :') }} {{ __backup_dest }}
     owner: "{{ backup_user.name }}"
     mode: 0550
-  delegate_to: "{{ backup_server_name }}"
+  delegate_to: "{{ __backup_server_name }}"
 # Create script to backup folders from remote to local
+
 # Create systemd service and timer to do the backup

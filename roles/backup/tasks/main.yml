@@ -6,13 +6,10 @@
       - rsync
       - restic
     state: present
-  register: __backup_install_packages
+  notify: Reboot linux server
 
-- name: Reboot linux server
-  ansible.builtin.reboot:
-    reboot_timeout: "{{ backup_reboot_timeout }}"
-  when:
-    - __backup_install_packages is changed
+- name: Call handlers
+  ansible.builtin.meta: flush_handlers
 
 # Ensure Backup user exists
 - name: Create linux user named backup
