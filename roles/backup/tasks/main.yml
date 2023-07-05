@@ -5,6 +5,7 @@
     name:
       - rsync
       - restic
+      - nfs-utils
     state: present
   notify: Reboot linux server
 
@@ -19,4 +20,41 @@
     shell: /bin/bash
     state: present
     generate_ssh_key: true
-# Finally Configure restic to backup all dirs to synology
+
+- name: Enable linger for backup user
+  ansible.builtin.command: loginctl enable-linger {{ backup_server_user }}
+  args:
+    creates: /var/lib/systemd/linger/{{ backup_server_user }}
+
+- name: Create directory {{ backup_nfs_client_path }}
+  ansible.builtin.file:
+    path: "{{ backup_nfs_client_path }}"
+    state: directory
+    owner: "{{ backup_server_user }}"
+    group: root
+
+- name: Create systemd unit to mount nfs share with backups
+  ansible.builtin.template:
+    src: nfs-backup.mount.j2
+    dest: /etc/systemd/system/{{ backup_nfs_systemd_unit_name }}
+    owner: root
+    group: root
+    mode: 0660
+  notify: Reload systemd
+
+- name: Call handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start systemd unit var-mnt-backup.mount
+  ansible.builtin.systemd:
+    name: "{{ backup_nfs_systemd_unit_name }}"
+    enabled: true
+    state: started
+# # Finally Configure restic to backup all dirs to synology
+# - name: Create systemd unit from template for unprivileged user
+#   ansible.builtin.template:
+#     src: backup.service.j2
+#     dest: /etc/systemd/system/backup-server.service
+#     owner: root
+#     group: root
+#     mode: 420

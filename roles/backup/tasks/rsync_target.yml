@@ -42,13 +42,81 @@
 
 - name: Create rsync backup script
   ansible.builtin.copy:
-    dest: "{{ backup_scripts_path }}/rsync-{{ ansible_host }}.sh"
+    dest: "{{ __backup_rsync_script_path }}"
     content: |
       #!/bin/bash
       rsync -az -e "ssh -o StrictHostKeyChecking=no" {{ backup_remote_user }}@{{ ansible_host }}:{{ backup_dirs | join(' :') }} {{ __backup_dest }}
-    owner: "{{ backup_user.name }}"
+    owner: "{{ backup_user.group }}"
+    group: "{{ backup_user.name }}"
     mode: 0550
   delegate_to: "{{ __backup_server_name }}"
-# Create script to backup folders from remote to local
 
-# Create systemd service and timer to do the backup
+- name: Ensure base systemd units path for user backup exists
+  ansible.builtin.file:
+    path: "{{ __backup_user_systemd_basepath }}"
+    owner: "{{ backup_user.name }}"
+    state: directory
+    mode: 0750
+  delegate_to: "{{ __backup_server_name }}"
+
+- name: Create systemd unit to backup script
+  ansible.builtin.copy:
+    dest: "{{ __backup_rsync_backup_systemd_base }}.service"
+    content: |
+      [Unit]
+      Description=A job to run rsync backup for {{ inventory_hostname }}
+
+      [Service]
+      Type=simple
+      ExecStart={{ __backup_rsync_script_path }}
+
+      [Install]
+      WantedBy=default.target
+    owner: "{{ backup_user.name }}"
+    mode: 420
+  delegate_to: "{{ __backup_server_name }}"
+  notify: Reload systemd for user scope
+
+- name: Create systemd timer to trigger systemd backup service weekly
+  ansible.builtin.copy:
+    dest: "{{ __backup_rsync_backup_systemd_base }}.timer"
+    content: |
+      [Unit]
+      Description=Schedule a weekly backup
+
+      [Timer]
+      Unit=rsync-backup-{{ inventory_hostname }}.service
+      OnUnitActiveSec=1w
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+    owner: "{{ backup_user.name }}"
+    group: root
+    mode: 420
+  delegate_to: "{{ __backup_server_name }}"
+  notify: Reload systemd for user scope
+
+- name: Trigger pending handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable systemd service rsync-backup-{{ inventory_hostname }}
+  ansible.builtin.systemd:
+    name: rsync-backup-{{ inventory_hostname }}.service
+    enabled: true
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ backup_user.uid }}"
+  delegate_to: "{{ __backup_server_name }}"
+  become_user: "{{ backup_user.name }}"
+
+- name: Enable and start systemd timer rsync-backup-{{ inventory_hostname }}
+  ansible.builtin.systemd:
+    name: rsync-backup-{{ inventory_hostname }}.timer
+    enabled: true
+    state: started
+    scope: user
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ backup_user.uid }}"
+  delegate_to: "{{ __backup_server_name }}"
+  become_user: "{{ backup_user.name }}"

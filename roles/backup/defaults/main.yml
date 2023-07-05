@@ -16,3 +16,8 @@ backup_base_path: /var/backup
 backup_scripts_path: "{{ backup_base_path }}/scripts"
 backup_rsync_base_path: "{{ backup_base_path }}/rsync"
 backup_dirs: ["/tmp"]
+
+backup_nfs_server_host: cloud.veverak.net
+backup_nfs_server_path: /volume1/Backups
+backup_nfs_client_path: /var/mnt/backup
+backup_nfs_systemd_unit_name: var-mnt-backup.mount

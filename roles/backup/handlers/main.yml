@@ -3,3 +3,12 @@
 - name: Reboot linux server
   ansible.builtin.reboot:
     reboot_timeout: "{{ backup_reboot_timeout }}"
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Reload systemd for user scope
+  ansible.builtin.systemd:
+    daemon_reload: true
+    scope: user

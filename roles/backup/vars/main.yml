@@ -1,3 +1,6 @@
 ---
 # vars file for backup
 backup_reboot_timeout: 180
+__backup_rsync_script_path: "{{ backup_scripts_path }}/rsync-{{ inventory_hostname }}.sh"
+__backup_user_systemd_basepath: "{{ backup_user.home }}/.local/share/systemd/user"
+__backup_rsync_backup_systemd_base: "{{__backup_user_systemd_basepath }}/rsync-backup-{{ inventory_hostname }}"

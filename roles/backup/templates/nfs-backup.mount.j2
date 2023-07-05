@@ -1,0 +1,13 @@
+[Unit]
+Description=Mount NFS Share
+After=network-online.target
+Wants=network-online.target
+
+[Mount]
+What={{ backup_nfs_server_host }}:{{ backup_nfs_server_path }}
+Where={{ backup_nfs_client_path }}
+Type=nfs
+Options=all_squash
+
+[Install]
+WantedBy=multi-user.target
