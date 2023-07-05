@@ -2,7 +2,7 @@
 - name: Set Backup server host
   ansible.builtin.set_fact:
     __backup_server_name: "{{ groups[backup_server_groupname][0] }}"
-    __backup_dest: "{{ backup_rsync_base_path }}/{{ ansible_host }}"
+    __backup_dest: "{{ backup_rsync_base_path }}/{{ inventory_hostname }}"
 
 - name: Get backup user info
   ansible.builtin.user:
@@ -86,7 +86,8 @@
 
       [Timer]
       Unit=rsync-backup-{{ inventory_hostname }}.service
-      OnUnitActiveSec=1w
+      Calendar=Sat 02:00
+      RandomizedDelaySec=1h
       Persistent=true
 
       [Install]
