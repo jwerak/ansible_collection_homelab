@@ -8,3 +8,4 @@ openhab_base_dir: /opt/openhab
 openhab_conf_dir: "{{ openhab_base_dir }}/conf"
 openhab_addons_dir: "{{ openhab_base_dir }}/addons"
 openhab_userdata_dir: "{{ openhab_base_dir }}/userdata"
+openhab_image_label: latest
