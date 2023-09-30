@@ -1,6 +1,7 @@
 ---
 - name: Restart unifi-controller
   become_user: "{{ unifi_system_username }}"
+  become: true
   ansible.builtin.systemd:
     daemon_reload: true
     state: restarted

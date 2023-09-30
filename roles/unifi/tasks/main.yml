@@ -1,13 +1,13 @@
 ---
 - name: Create unifi user
   ansible.builtin.user:
-    name: "{{ unify_system_username }}"
+    name: "{{ unifi_system_username }}"
   register: unifi_user_info
 
 - name: Enable linger for unifi user
   ansible.builtin.command:
-    cmd: loginctl enable-linger {{ unify_system_username }}
-    creates: /var/lib/systemd/linger/{{ unify_system_username }}
+    cmd: loginctl enable-linger {{ unifi_system_username }}
+    creates: /var/lib/systemd/linger/{{ unifi_system_username }}
 
 - name: Read subuid for unifi user
   ansible.builtin.slurp:
@@ -16,7 +16,7 @@
 
 - name: Load subuid file to list
   ansible.builtin.set_fact:
-    unifi_config_uid: "{{ unifi_subuid_file.content | b64decode | regex_search(unify_system_username + ':([0-9]+):' | string, '\\1') | first | int + 999 }}"
+    unifi_config_uid: "{{ unifi_subuid_file.content | b64decode | regex_search(unifi_system_username + ':([0-9]+):' | string, '\\1') | first | int + 999 }}"
 
 - name: Read subgid for unifi user
   ansible.builtin.slurp:
@@ -25,7 +25,7 @@
 
 - name: Load subgid file to list
   ansible.builtin.set_fact:
-    unifi_config_gid: "{{ unifi_subgid_file.content | b64decode | regex_search(unify_system_username + ':([0-9]+):' | string, '\\1') | first | int + 999 }}"
+    unifi_config_gid: "{{ unifi_subgid_file.content | b64decode | regex_search(unifi_system_username + ':([0-9]+):' | string, '\\1') | first | int + 999 }}"
 
 - name: Create config directories
   ansible.builtin.file:
@@ -51,7 +51,11 @@
   notify:
     - Restart unifi-controller
 
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
 - name: Open ports on Firewall for unifi controller
+  when: unifi_configure_firewall
   ansible.posix.firewalld:
     port: "{{ item }}"
     permanent: true
@@ -60,7 +64,7 @@
   loop: "{{ unifi_controller_ports }}"
 
 - name: Ensure unifi-controller service is started
-  become_user: "{{ unify_system_username }}"
+  remote_user: "{{ unifi_system_username }}"
   ansible.builtin.systemd:
     name: unifi-controller
     state: started
@@ -68,9 +72,6 @@
     scope: user
   environment:
     XDG_RUNTIME_DIR: /run/user/{{ unifi_user_info.uid }}
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
 
 - name: Check if unifi controller is listening
   delegate_to: localhost

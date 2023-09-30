@@ -1,4 +1,5 @@
 ---
 unifi_controller_version: latest
-unify_system_username: unifi
+unifi_system_username: unifi
 unifi_listen_domain: "{{ ansible_host }}"
+unifi_configure_firewall: false

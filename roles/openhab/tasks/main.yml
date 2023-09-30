@@ -21,8 +21,7 @@
     path: "{{ item }}"
     state: directory
     mode: 0700
-    owner: root
-    group: root
+
   loop: "{{ __openhab_dirs }}"
 
 - name: Set devices podman option variable
