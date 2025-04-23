@@ -2,4 +2,5 @@
 unifi_controller_version: latest
 unifi_system_username: unifi
 unifi_listen_domain: "{{ ansible_host }}"
+unifi_listen_port: 8443
 unifi_configure_firewall: false

@@ -64,7 +64,7 @@
   loop: "{{ unifi_controller_ports }}"
 
 - name: Ensure unifi-controller service is started
-  remote_user: "{{ unifi_system_username }}"
+  become_user: "{{ unifi_system_username }}"
   ansible.builtin.systemd:
     name: unifi-controller
     state: started
@@ -72,17 +72,18 @@
     scope: user
   environment:
     XDG_RUNTIME_DIR: /run/user/{{ unifi_user_info.uid }}
+    DBUS_SESSION_BUS_ADDRESS: unix:path=/run/user/{{ unifi_user_info.uid }}/bus
 
 - name: Check if unifi controller is listening
   delegate_to: localhost
   ansible.builtin.wait_for:
     host: "{{ unifi_listen_domain }}"
-    port: 8443
+    port: "{{ unifi_listen_port }}"
     delay: 5
     timeout: 10
-    msg: "Timeout waiting for 8443 to respond"
+    msg: "Timeout waiting for {{ unifi_listen_port }} to respond"
   retries: 5
 
 - name: Unifi is up
   ansible.builtin.debug:
-    msg: "Unifi Controller is listening on https://{{ unifi_listen_domain }}:8443"
+    msg: "Unifi Controller is listening on https://{{ unifi_listen_domain }}:{{ unifi_listen_port }}"
